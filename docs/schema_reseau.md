@@ -22,4 +22,4 @@ R1 → SW1 → PC1, PC2, WEB_SERVER
 ## Hôtes surveillés par notre simulateur
 - R1         : routeur principal
 - SW1        : switch branche gauche
-- WEB_SERVER : serveur web
+- WEB_SERVER : serveur web 
