@@ -2,42 +2,42 @@
 # Ce fichier simule des données réseau réalistes
 # Il génère des métriques normales et des anomalies
 
-import random      # pour générer des nombres aléatoires
-import sqlite3     # pour la base de données
-import datetime    # pour l'heure actuelle
-import time        # pour attendre 5 secondes
+import random
+import sqlite3
+import datetime
+import time
+from database import creer_base_de_donnees
 
 def generer_metrique():
     """
     Génère UNE ligne de données réseau
     Retourne soit une situation normale, soit une anomalie
     """
-    
-    # random.random() génère un nombre entre 0 et 1
-    # Si ce nombre est inférieur à 0.05 = 5% de chance
+    # 5% de chance d'anomalie
     est_anomalie = random.random() < 0.05
     
     if est_anomalie:
-        # Situation anormale : valeurs élevées
-        latence     = random.uniform(80, 200)   # entre 80 et 200 ms
-        trafic      = random.uniform(0, 100)    # normal
-        taux_erreur = random.uniform(5, 20)     # entre 5 et 20 %
+        # Situation anormale
+        latence     = random.uniform(80, 200)
+        trafic      = random.uniform(0, 100)
+        taux_erreur = random.uniform(5, 20)
         is_anomaly  = 1
         print("🔴 ANOMALIE générée !")
     else:
-        # Situation normale : valeurs basses
-        latence     = random.uniform(5, 40)     # entre 5 et 40 ms
-        trafic      = random.uniform(0, 100)    # entre 0 et 100 Mbps
-        taux_erreur = random.uniform(0, 1)      # entre 0 et 1 %
+        # Situation normale
+        latence     = random.uniform(5, 40)
+        trafic      = random.uniform(0, 100)
+        taux_erreur = random.uniform(0, 1)
         is_anomaly  = 0
         print("🟢 Situation normale")
     
     return {
-        "timestamp"  : datetime.datetime.now().isoformat(),
-        "latency"    : round(latence, 2),
-        "traffic"    : round(trafic, 2),
-        "error_rate" : round(taux_erreur, 2),
-        "is_anomaly" : is_anomaly
+        "ts"        : datetime.datetime.now().isoformat(),
+        "host"      : "simulateur",
+        "latency"   : round(latence, 2),
+        "traffic"   : round(trafic, 2),
+        "error_rate": round(taux_erreur, 2),
+        "is_anomaly": is_anomaly
     }
 
 def sauvegarder(metrique):
@@ -48,13 +48,15 @@ def sauvegarder(metrique):
     curseur   = connexion.cursor()
     
     curseur.execute("""
-        INSERT INTO metrics (timestamp, latency, traffic, error_rate, is_anomaly)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO network_metrics 
+        (ts, host, latency, error_rate, traffic, is_anomaly)
+        VALUES (?, ?, ?, ?, ?, ?)
     """, (
-        metrique["timestamp"],
+        metrique["ts"],
+        metrique["host"],
         metrique["latency"],
-        metrique["traffic"],
         metrique["error_rate"],
+        metrique["traffic"],
         metrique["is_anomaly"]
     ))
     
@@ -63,10 +65,13 @@ def sauvegarder(metrique):
 
 # Programme principal
 if __name__ == "__main__":
+    # On crée la base de données si elle n'existe pas
+    creer_base_de_donnees()
+    
     print(" Simulateur démarré !")
     print("Appuie sur Ctrl+C pour arrêter\n")
     
-    compteur = 0  # pour compter le nombre de mesures
+    compteur = 0
     
     while True:
         compteur += 1
@@ -76,11 +81,12 @@ if __name__ == "__main__":
         metrique = generer_metrique()
         
         # On affiche les valeurs
-        print(f"   Timestamp  : {metrique['timestamp']}")
+        print(f"   Timestamp  : {metrique['ts']}")
+        print(f"   Host       : {metrique['host']}")
         print(f"   Latence    : {metrique['latency']} ms")
         print(f"   Trafic     : {metrique['traffic']} Mbps")
         print(f"   Erreurs    : {metrique['error_rate']} %")
-        print(f"   Anomalie   : {'OUI' if metrique['is_anomaly'] else 'NON'}")
+        print(f"   Anomalie   : {'OUI 🔴' if metrique['is_anomaly'] else 'NON ✅'}")
         
         # On sauvegarde
         sauvegarder(metrique)

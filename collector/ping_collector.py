@@ -1,11 +1,10 @@
 # collector/ping_collector.py
 # Ce fichier envoie des pings et sauvegarde la latence
-
-import ping3          # pour envoyer des pings
-import sqlite3        # pour la base de données
-import datetime       # pour l'heure actuelle
-import time           # pour attendre 5 secondes
-from database import creer_base_de_donnees  # notre fichier database.py
+import ping3
+import sqlite3
+import datetime
+import time
+from database import creer_base_de_donnees
 
 # Les adresses IP qu'on va pinguer
 CIBLES = [
@@ -20,7 +19,7 @@ def collecter_ping():
     resultats = []
     
     for ip in CIBLES:
-        # On envoie le ping (timeout=2 = on attend max 2 secondes)
+        # On envoie le ping
         latence = ping3.ping(ip, timeout=2)
         
         # Si pas de réponse, latence = -1
@@ -34,9 +33,12 @@ def collecter_ping():
         maintenant = datetime.datetime.now().isoformat()
         
         resultats.append({
-            "timestamp": maintenant,
-            "host": ip,
-            "latency": round(latence, 2)
+            "ts"        : maintenant,
+            "host"      : ip,
+            "latency"   : round(latence, 2),
+            "error_rate": 0,
+            "traffic"   : 0,
+            "is_anomaly": 0
         })
         
         print(f" Ping vers {ip} : {round(latence, 2)} ms")
@@ -48,35 +50,37 @@ def sauvegarder(resultats):
     Sauvegarde les résultats dans la base de données
     """
     connexion = sqlite3.connect("../data/network.db")
-    curseur = connexion.cursor()
+    curseur   = connexion.cursor()
     
     for r in resultats:
         curseur.execute("""
-            INSERT INTO metrics (timestamp, latency, traffic, error_rate, is_anomaly)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO network_metrics 
+            (ts, host, latency, error_rate, traffic, is_anomaly)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
-            r["timestamp"],
+            r["ts"],
+            r["host"],
             r["latency"],
-            0,    # trafic = 0 car ping ne mesure pas ça
-            0,    # erreurs = 0 car ping ne mesure pas ça
-            0     # pas d'anomalie détectée pour l'instant
+            r["error_rate"],
+            r["traffic"],
+            r["is_anomaly"]
         ))
     
     connexion.commit()
     connexion.close()
-    print(" Données sauvegardées !\n")
+    print("Données sauvegardées !\n")
 
 # Programme principal
 if __name__ == "__main__":
     # On crée la base de données si elle n'existe pas
     creer_base_de_donnees()
     
-    print(" Collecteur ping démarré...")
+    print("Collecteur ping démarré...")
     print("Appuie sur Ctrl+C pour arrêter\n")
     
     # Boucle infinie : on collecte toutes les 5 secondes
     while True:
         resultats = collecter_ping()
         sauvegarder(resultats)
-        print(" Prochaine collecte dans 5 secondes...\n")
-        time.sleep(5)  # on attend 5 secondes
+        print("Prochaine collecte dans 5 secondes...\n")
+        time.sleep(5)
