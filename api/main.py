@@ -3,16 +3,24 @@ from pydantic import BaseModel
 from typing import List, Optional
 import datetime
 import logging
+import sys
+import os
+
+# Add the api directory to the path so we can import database
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="AI Network Copilot API", 
+    title="AI Network Copilot API",
     description="API for network metrics and alerts",
     version="0.1.0"
 )
+
+# Import database utility
+from database import get_latest_metrics as db_get_latest_metrics, get_alerts as db_get_alerts, get_hosts as db_get_hosts
 
 # Pydantic models for response
 class NetworkMetric(BaseModel):
@@ -34,19 +42,41 @@ class Alert(BaseModel):
 class AlertsResponse(BaseModel):
     alerts: List[Alert]
 
+class HostsResponse(BaseModel):
+    hosts: List[str]
+
 @app.get("/metrics/latest", response_model=MetricsResponse)
-async def get_latest_metrics():
+async def get_latest_metrics_endpoint(limit: int = 100):
     """Get latest network metrics"""
-    logger.info("Fetching latest network metrics")
-    # Return empty list - no final logic yet (to be implemented with data pipeline)
-    return {"metrics": []}
+    logger.info(f"Fetching latest {limit} network metrics")
+    try:
+        metrics = db_get_latest_metrics(limit)
+        return {"metrics": metrics}
+    except Exception as e:
+        logger.error(f"Error fetching metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch metrics")
 
 @app.get("/alerts", response_model=AlertsResponse)
-async def get_alerts():
+async def get_alerts_endpoint(limit: int = 50):
     """Get active alerts"""
-    logger.info("Fetching active alerts")
-    # Return empty list - no final logic yet (to be implemented with detection module)
-    return {"alerts": []}
+    logger.info(f"Fetching latest {limit} alerts")
+    try:
+        alerts = db_get_alerts(limit)
+        return {"alerts": alerts}
+    except Exception as e:
+        logger.error(f"Error fetching alerts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch alerts")
+
+@app.get("/hosts", response_model=HostsResponse)
+async def get_hosts_endpoint():
+    """Get list of unique hosts"""
+    logger.info("Fetching unique hosts")
+    try:
+        hosts = db_get_hosts()
+        return {"hosts": hosts}
+    except Exception as e:
+        logger.error(f"Error fetching hosts: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch hosts")
 
 @app.get("/health")
 async def health():
