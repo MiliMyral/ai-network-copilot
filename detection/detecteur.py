@@ -13,7 +13,10 @@ from rules import (
     SEUILS
 )
 
-CHEMIN_MODELE = "../detection/model.pkl"
+import os
+# Chemin absolu vers le modèle — fonctionne depuis n'importe quel dossier
+DOSSIER_DETECTION = os.path.dirname(os.path.abspath(__file__))
+CHEMIN_MODELE     = os.path.join(DOSSIER_DETECTION, "model.pkl")
 
 def charger_modele():
     """Charge le modèle ML"""

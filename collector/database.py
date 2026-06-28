@@ -2,6 +2,7 @@
 # Ce fichier crée notre base de données SQLite et la table metrics
 
 # collector/database.py
+import os
 import sqlite3
 
 def creer_base_de_donnees():
@@ -9,7 +10,9 @@ def creer_base_de_donnees():
     Crée la base de données et la table network_metrics
     selon le schéma défini avec Personne B
     """
-    connexion = sqlite3.connect("../data/network.db")
+    DOSSIER_BASE = os.path.dirname(os.path.abspath(__file__))
+    CHEMIN_DB    = os.path.join(DOSSIER_BASE, "..", "data", "network.db")
+    connexion    = sqlite3.connect(CHEMIN_DB)
     curseur = connexion.cursor()
     
     curseur.execute("""
