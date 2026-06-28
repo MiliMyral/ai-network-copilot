@@ -1,10 +1,12 @@
 """
 Database utility functions for AI Network Copilot API
 """
+import os
 import sqlite3
 import datetime
 from typing import List, Optional
 from pydantic import BaseModel
+
 
 class NetworkMetric(BaseModel):
     ts: datetime.datetime
@@ -16,7 +18,8 @@ class NetworkMetric(BaseModel):
 
 def get_latest_metrics(limit: int = 100) -> List[NetworkMetric]:
     """Get latest network metrics from database"""
-    conn = sqlite3.connect("../data/network.db")
+    CHEMIN_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "network.db")
+    conn = sqlite3.connect(CHEMIN_DB)
     conn.row_factory = sqlite3.Row  # This allows us to access columns by name
     cursor = conn.cursor()
 
@@ -45,7 +48,8 @@ def get_latest_metrics(limit: int = 100) -> List[NetworkMetric]:
 
 def get_alerts(limit: int = 50) -> List[dict]:
     """Get active alerts (anomalies) from database"""
-    conn = sqlite3.connect("../data/network.db")
+    CHEMIN_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "network.db")
+    conn = sqlite3.connect(CHEMIN_DB)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
@@ -78,7 +82,8 @@ def get_alerts(limit: int = 50) -> List[dict]:
 
 def get_hosts() -> List[str]:
     """Get list of unique hosts in the database"""
-    conn = sqlite3.connect("../data/network.db")
+    CHEMIN_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "network.db")
+    conn = sqlite3.connect(CHEMIN_DB)
     cursor = conn.cursor()
 
     cursor.execute("SELECT DISTINCT host FROM network_metrics ORDER BY host")

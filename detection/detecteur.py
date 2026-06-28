@@ -104,7 +104,8 @@ def detecter_lot(limit=100):
     Détecte les anomalies sur les dernières mesures
     Utilisée par l'API de Personne B
     """
-    connexion = sqlite3.connect("../data/network.db")
+    CHEMIN_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "network.db")
+    connexion = sqlite3.connect(CHEMIN_DB)
     df = pd.read_sql(f"""
         SELECT id, ts, host, latency, error_rate, traffic
         FROM network_metrics
